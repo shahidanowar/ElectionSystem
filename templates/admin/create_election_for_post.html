@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">
+        <i class="fas fa-vote-yea me-2"></i>Create Election for Post
+    </h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="description" class="form-label">Additional Information</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"
+                              placeholder="Any specific details for this post in this election year"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Election
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

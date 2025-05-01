@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>
+        <i class="fas fa-check-double me-2"></i>Vote Verification Results
+    </h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if mismatches %}
+        <div class="alert alert-warning mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Vote count mismatches were found. Please review the details below.
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Election Post</th>
+                        <th>Candidate</th>
+                        <th>Database Votes</th>
+                        <th>Blockchain Votes</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mismatch in mismatches %}
+                        <tr>
+                            <td>{{ mismatch.election }}</td>
+                            <td>{{ mismatch.candidate }}</td>
+                            <td>{{ mismatch.db_votes }}</td>
+                            <td>{{ mismatch.chain_votes }}</td>
+                            <td class="text-danger">
+                                {{ mismatch.db_votes - mismatch.chain_votes }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <h5><i class="fas fa-info-circle me-2"></i>What does this mean?</h5>
+            <p class="mb-0">
+                A mismatch between database and blockchain vote counts could indicate:
+            </p>
+            <ul class="mb-0 mt-2">
+                <li>Failed transaction confirmations</li>
+                <li>Network synchronization issues</li>
+                <li>Potential tampering attempts</li>
+            </ul>
+        </div>
+    {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            All vote counts match between the database and blockchain!
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

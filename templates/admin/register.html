@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-user-shield me-2"></i>Admin Registration
+                </h3>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-1"></i>Admin Username
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required
+                               placeholder="Choose an admin username">
+                    </div>
+                    <div class="mb-4">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="Enter your email">
+                    </div>
+                    <div class="mb-4">
+                        <label for="eth_address" class="form-label">
+                            <i class="fab fa-ethereum me-1"></i>Ethereum Address
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="eth_address" name="eth_address" required
+                                   pattern="^0x[a-fA-F0-9]{40}$" 
+                                   placeholder="0x...">
+                            <button class="btn btn-outline-secondary" type="button" id="connectMetaMask">
+                                <img src="https://metamask.io/images/metamask-fox.svg" alt="MetaMask" height="20" class="me-1">
+                                Connect MetaMask
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Connect MetaMask or enter your Ethereum address manually
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Password
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" required
+                               placeholder="Create a strong password">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Password should be at least 8 characters long
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-shield me-1"></i>Create Admin Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('connectMetaMask').addEventListener('click', async () => {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask to connect your wallet');
+        return;
+    }
+
+    try {
+        // Request account access
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts.length > 0) {
+            document.getElementById('eth_address').value = accounts[0];
+        }
+    } catch (error) {
+        console.error('Error connecting to MetaMask:', error);
+        alert('Failed to connect to MetaMask: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

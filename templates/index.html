@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="display-6 mb-4">
+            <i class="fas fa-ballot me-2"></i>Active Elections
+        </h2>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+    {% if election_years %}
+        {% for election_year in election_years %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>{{ election_year.title }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted mb-2">
+                        <i class="fas fa-clock me-1"></i>Election Period:
+                        {{ election_year.start_date.strftime('%Y-%m-%d %H:%M') }} to 
+                        {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    {% if election_year.description %}
+                    <p>{{ election_year.description }}</p>
+                    {% endif %}
+                </div>
+
+                {% if election_year.elections.count() > 0 %}
+                <div class="row">
+                    {% for election in election_year.elections %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">{{ election.post.title }}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if election.description %}
+                                <p class="card-text">{{ election.description }}</p>
+                                {% endif %}
+                                <div class="small text-muted mb-3">
+                                    <div class="mb-1">
+                                        <i class="fas fa-users me-1"></i>Candidates: 
+                                        <span class="badge bg-info">{{ election.candidates.count() }}</span>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-vote-yea me-1"></i>Total Votes: 
+                                        <span class="badge bg-secondary">{{ election.votes.count() }}</span>
+                                    </div>
+                                </div>
+                                <div class="d-grid">
+                                    <a href="{{ url_for('view_election', election_id=election.id) }}" class="btn btn-primary">
+                                        <i class="fas fa-vote-yea me-1"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No posts have been added to this election yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+                <h5>No Active Elections</h5>
+                <p class="text-muted">There are no active elections at the moment.</p>
+            </div>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-user-lock fa-3x mb-3 text-muted"></i>
+            <h5>Welcome to College Elections</h5>
+            <p class="text-muted mb-4">Please login or register to view and participate in elections.</p>
+            <div class="d-grid gap-2 col-md-6 mx-auto">
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

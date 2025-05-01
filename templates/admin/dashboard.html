@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Elections Management Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-vote-yea me-2"></i>Admin Dashboard</h2>
+        <div>
+            <a href="{{ url_for('verify_users') }}" class="btn btn-success me-2">
+                <i class="fas fa-user-check me-1"></i>Verify Students
+                {% if pending_verifications > 0 %}
+                    <span class="badge bg-light text-dark ms-1">{{ pending_verifications }}</span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('verify_all_votes') }}" class="btn btn-info me-2">
+                <i class="fas fa-check-double me-1"></i>Verify Votes
+            </a>
+            <div class="btn-group">
+                <a href="{{ url_for('create_election') }}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus me-1"></i>New Election Year
+                </a>
+                <a href="{{ url_for('create_election_post') }}" class="btn btn-info">
+                    <i class="fas fa-user-tie me-1"></i>New Post
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-users me-2"></i>Pending Verifications
+                    </h5>
+                    <h2 class="mb-0">{{ pending_verifications }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-check-circle me-2"></i>Verified Users
+                    </h5>
+                    <h2 class="mb-0">{{ verified_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-calendar me-2"></i>Active Elections
+                    </h5>
+                    <h2 class="mb-0">{{ active_elections }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock me-2"></i>Upcoming Elections
+                    </h5>
+                    <h2 class="mb-0">{{ upcoming_elections }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Election Years -->
+    {% for election_year in election_years %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>{{ election_year.title }}
+            </h3>
+            <div>
+                {% if election_year.is_active %}
+                    {% if now < election_year.start_date %}
+                        <span class="badge bg-warning">Upcoming</span>
+                    {% elif now > election_year.end_date %}
+                        <span class="badge bg-secondary">Ended</span>
+                    {% else %}
+                        <span class="badge bg-success">Active</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <strong>Period:</strong> 
+                {{ election_year.start_date.strftime('%Y-%m-%d %H:%M') }} to 
+                {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }}
+            </div>
+
+            <!-- Posts Table -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Post</th>
+                            <th>Description</th>
+                            <th>Candidates</th>
+                            <th>Total Votes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for election in election_year.elections %}
+                        <tr>
+                            <td>{{ election.post.title }}</td>
+                            <td>{{ election.description[:50] + '...' if election.description and election.description|length > 50 else election.description or 'No description' }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ election.candidates.count() }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ election.votes.count() }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('add_candidate', election_id=election.id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-user-plus me-1"></i>Add Candidate
+                                    </a>
+                                    <a href="{{ url_for('view_election', election_id=election.id) }}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Post to Election Year -->
+            <div class="mt-3">
+                <form method="POST" action="{{ url_for('create_election_for_post', election_year_id=election_year.id) }}" class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <select name="post_id" class="form-select" required>
+                            <option value="">Select Post...</option>
+                            {% for post in available_posts %}
+                            <option value="{{ post.id }}">{{ post.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <input type="text" name="description" class="form-control" placeholder="Post description (optional)">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Post to Election
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not election_years %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>No election years created yet.
+        <a href="{{ url_for('create_election') }}" class="alert-link">Create your first election year</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

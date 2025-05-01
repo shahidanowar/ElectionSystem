@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Student Registration</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Roll Number</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text">Enter your college roll number</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="form-text">Enter your college email address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eth_address" class="form-label">Ethereum Address</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="eth_address" name="eth_address" required 
+                                       pattern="^0x[a-fA-F0-9]{40}$" placeholder="0x...">
+                                <button type="button" class="btn btn-outline-secondary" id="connectMetaMask">
+                                    <i class="fas fa-wallet me-1"></i>Connect MetaMask
+                                </button>
+                            </div>
+                            <div class="form-text">Your Ethereum wallet address for voting</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_card" class="form-label">College ID Card</label>
+                            <input type="file" class="form-control" id="id_card" name="id_card" accept="image/*" required>
+                            <div class="form-text">Upload a clear image of your college ID card</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('connectMetaMask').addEventListener('click', async () => {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask to continue');
+        return;
+    }
+
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        document.getElementById('eth_address').value = accounts[0];
+    } catch (error) {
+        alert('Error connecting to MetaMask: ' + error.message);
+    }
+});
+
+// Listen for account changes
+if (typeof window.ethereum !== 'undefined') {
+    window.ethereum.on('accountsChanged', function (accounts) {
+        if (accounts.length > 0) {
+            document.getElementById('eth_address').value = accounts[0];
+        }
+    });
+}
+</script>
+{% endblock %}

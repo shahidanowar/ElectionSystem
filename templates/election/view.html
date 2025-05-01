@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ election.post.title }}</h2>
+            <div class="text-muted">{{ election_year.title }}</div>
+        </div>
+        <div class="card-body">
+            {% if election.description %}
+            <p class="lead">{{ election.description }}</p>
+            {% endif %}
+            
+            <div class="alert {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}alert-success{% else %}alert-warning{% endif %} mb-4">
+                <i class="fas {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+                Election Status: 
+                {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+                    Active (until {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }})
+                {% else %}
+                    {% if now < election_year.start_date %}
+                        Starts on {{ election_year.start_date.strftime('%Y-%m-%d %H:%M') }}
+                    {% elif now > election_year.end_date %}
+                        Ended on {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                        Inactive
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            {% if has_voted %}
+                <div class="alert alert-info">
+                    <i class="fas fa-vote-yea me-2"></i>You have already cast your vote for this position.
+                </div>
+            {% elif election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+                <form id="voteForm" class="mb-4">
+                    <h4 class="mb-3">Cast Your Vote</h4>
+                    {% for candidate in election.candidates %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="candidate_id" 
+                                   id="candidate{{ candidate.id }}" value="{{ candidate.id }}" required>
+                            <label class="form-check-label" for="candidate{{ candidate.id }}">
+                                <strong>{{ candidate.name }}</strong>
+                                {% if candidate.description %}
+                                    <p class="text-muted mb-0">{{ candidate.description }}</p>
+                                {% endif %}
+                            </label>
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary" id="voteButton">
+                        <i class="fas fa-vote-yea me-2"></i>Submit Vote
+                    </button>
+                </form>
+
+                <div id="metamaskStatus" class="alert alert-info d-none">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    <span id="metamaskMessage">Waiting for MetaMask...</span>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-clock me-2"></i>Voting is not currently available.
+                </div>
+            {% endif %}
+
+            {% if election.candidates.count() == 0 %}
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>No candidates have been added to this position yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if not has_voted and election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+<script>
+async function connectMetaMask() {
+    try {
+        await window.ethereum.request({ 
+            method: 'wallet_requestPermissions',
+            params: [{ eth_accounts: {} }]
+        });
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        return accounts[0];
+    } catch (error) {
+        throw new Error('Failed to connect to MetaMask: ' + error.message);
+    }
+}
+
+document.getElementById('voteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Check if MetaMask is installed
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask to vote');
+        return;
+    }
+
+    const candidateId = document.querySelector('input[name="candidate_id"]:checked').value;
+    const statusDiv = document.getElementById('metamaskStatus');
+    const messageSpan = document.getElementById('metamaskMessage');
+    
+    try {
+        statusDiv.classList.remove('d-none', 'alert-danger');
+        statusDiv.classList.add('alert-info');
+        messageSpan.textContent = 'Connecting to MetaMask...';
+        
+        // Connect to MetaMask first
+        const account = await connectMetaMask();
+        
+        // Get transaction data from server
+        messageSpan.textContent = 'Preparing transaction...';
+        const response = await fetch('{{ url_for("cast_vote", election_id=election.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `candidate_id=${candidateId}`
+        });
+        
+        const data = await response.json();
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Failed to prepare transaction');
+        }
+        
+        // Ensure the from address matches the connected account
+        if (data.transaction.from.toLowerCase() !== account.toLowerCase()) {
+            throw new Error('Connected account does not match the required account');
+        }
+        
+        // Send transaction via MetaMask
+        messageSpan.textContent = 'Please confirm the transaction in MetaMask...';
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [data.transaction],
+        });
+        
+        // Confirm the vote on the server
+        messageSpan.textContent = 'Confirming vote...';
+        const confirmResponse = await fetch('{{ url_for("confirm_vote", election_id=election.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transactionHash: txHash,
+                candidateId: candidateId
+            })
+        });
+        
+        const confirmData = await confirmResponse.json();
+        if (confirmData.status === 'success') {
+            statusDiv.classList.remove('alert-info');
+            statusDiv.classList.add('alert-success');
+            messageSpan.textContent = 'Vote successfully recorded! Reloading page...';
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            throw new Error(confirmData.message || 'Failed to confirm vote');
+        }
+        
+    } catch (error) {
+        statusDiv.classList.remove('alert-info');
+        statusDiv.classList.add('alert-danger');
+        messageSpan.textContent = `Error: ${error.message}`;
+        console.error('Voting error:', error);
+    }
+});
+
+// Check MetaMask connection on page load
+window.addEventListener('load', async () => {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            // Check if already connected
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts.length > 0) {
+                console.log('MetaMask already connected:', accounts[0]);
+            }
+        } catch (error) {
+            console.error('Error checking MetaMask connection:', error);
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
