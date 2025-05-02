@@ -96,9 +96,9 @@
                     <div class="alert alert-info">
                         <i class="fas fa-clock me-2"></i>
                         {% if election_year_data.status == 'ongoing' %}
-                            This election is currently ongoing. Results will be available after {{ election_year_data.end_date.strftime('%Y-%m-%d %H:%M') }}.
+                            This election is currently ongoing. Results will be available after {{ election_year_data.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}.
                         {% else %}
-                            This election has not started yet. Results will be available after {{ election_year_data.end_date.strftime('%Y-%m-%d %H:%M') }}.
+                            This election has not started yet. Results will be available after {{ election_year_data.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}.
                         {% endif %}
                     </div>
                 {% endif %}

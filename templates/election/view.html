@@ -12,15 +12,15 @@
             <p class="lead">{{ election.description }}</p>
             {% endif %}
             
-            <div class="alert {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}alert-success{% else %}alert-warning{% endif %} mb-4">
-                <i class="fas {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            <div class="alert {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}alert-success{% else %}alert-warning{% endif %} mb-4">
+                <i class="fas {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                 Election Status: 
-                {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+                {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}
                     Active (until {{ election_year.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }})
                 {% else %}
-                    {% if now < election_year.start_date %}
+                    {% if now < election_year.start_date.astimezone(ist_timezone) %}
                         Starts on {{ election_year.start_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}
-                    {% elif now > election_year.end_date %}
+                    {% elif now > election_year.end_date.astimezone(ist_timezone) %}
                         Ended on {{ election_year.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}
                     {% else %}
                         Inactive

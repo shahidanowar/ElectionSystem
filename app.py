@@ -519,8 +519,11 @@ def cast_vote(election_id):
     # Check if election is active
     ist_timezone = pytz_timezone('Asia/Kolkata')
     now = datetime.now(ist_timezone)
+    start_date = election.election_year.start_date.astimezone(ist_timezone)
+    end_date = election.election_year.end_date.astimezone(ist_timezone)
+    
     if not (election.election_year.is_active and 
-            election.election_year.start_date.astimezone(ist_timezone) <= now <= election.election_year.end_date.astimezone(ist_timezone)):
+            start_date <= now <= end_date):
         return jsonify({'status': 'error', 'message': 'This election is not currently active.'})
 
     # Check if already voted
@@ -617,7 +620,8 @@ def confirm_vote(election_id):
 @app.route('/election/results')
 @login_required
 def election_results():
-    current_time = datetime.now()
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    current_time = datetime.now(ist_timezone)
     election_years = ElectionYear.query.all()
     results = {}
     
@@ -626,10 +630,11 @@ def election_results():
     
     for election_year in election_years:
         # Only show results if election has ended
-        if current_time > election_year.end_date:
+        end_date = election_year.end_date.astimezone(ist_timezone)
+        if current_time > end_date:
             results[election_year.id] = {
                 'title': election_year.title,
-                'end_date': election_year.end_date,
+                'end_date': end_date.astimezone(ist_timezone),
                 'elections': [],
                 'total_votes': 0,
                 'status': 'ended'
@@ -660,10 +665,11 @@ def election_results():
                     results[election_year.id]['elections'][-1]['total_votes'] += db_vote_count
                     results[election_year.id]['total_votes'] += db_vote_count
         else:
+            start_date = election_year.start_date.astimezone(ist_timezone)
             results[election_year.id] = {
                 'title': election_year.title,
-                'end_date': election_year.end_date,
-                'status': 'ongoing' if current_time >= election_year.start_date else 'upcoming'
+                'end_date': end_date,
+                'status': 'ongoing' if current_time >= start_date else 'upcoming'
             }
     
     return render_template('election/results.html', 
