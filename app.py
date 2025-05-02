@@ -135,12 +135,14 @@ def load_user(user_id):
 def index():
     ist_timezone = pytz_timezone('Asia/Kolkata')
     now = datetime.now(ist_timezone)
-    # Get active election years
-    active_election_years = ElectionYear.query.filter(
-        ElectionYear.is_active == True,
-        ElectionYear.start_date.astimezone(ist_timezone) <= now,
-        ElectionYear.end_date.astimezone(ist_timezone) >= now
-    ).all()
+    # Get all active election years first
+    election_years = ElectionYear.query.filter(ElectionYear.is_active == True).all()
+    
+    # Filter active elections using Python datetime comparison
+    active_election_years = [
+        ey for ey in election_years 
+        if ey.start_date.astimezone(ist_timezone) <= now <= ey.end_date.astimezone(ist_timezone)
+    ]
     return render_template('index.html', election_years=active_election_years, now=now)
 
 @app.route('/register', methods=['GET', 'POST'])
