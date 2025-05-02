@@ -13,57 +13,43 @@
     {% if election_years %}
         {% for election_year in election_years %}
         <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0">
-                    <i class="fas fa-calendar-alt me-2"></i>{{ election_year.title }}
-                </h3>
-            </div>
             <div class="card-body">
                 <h3 class="card-title">{{ election_year.title }}</h3>
                 <p class="card-text">{{ election_year.description }}</p>
                 <p class="text-muted">
                     Voting Period: {{ election_year.formatted_start }} to {{ election_year.formatted_end }}
                 </p>
-                {% if election_year.elections.count() > 0 %}
-                <div class="row">
-                    {% for election in election_year.elections %}
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">{{ election.post.title }}</h5>
-                            </div>
-                            <div class="card-body">
-                                {% if election.description %}
-                                <p class="card-text">{{ election.description }}</p>
-                                {% endif %}
-                                <div class="small text-muted mb-3">
-                                    <div class="mb-1">
-                                        <i class="fas fa-users me-1"></i>Candidates: 
-                                        <span class="badge bg-info">{{ election.candidates.count() }}</span>
-                                    </div>
-                                    <div>
-                                        <i class="fas fa-vote-yea me-1"></i>Total Votes: 
-                                        <span class="badge bg-secondary">{{ election.votes.count() }}</span>
-                                    </div>
-                                </div>
-                                <div class="d-grid">
-                                    <a href="{{ url_for('view_election', election_id=election.id) }}" class="btn btn-primary">
-                                        <i class="fas fa-vote-yea me-1"></i>View Details
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>No posts have been added to this election yet.
-                </div>
-                {% endif %}
+                <a href="{{ url_for('view_election', election_id=election_year.elections.first().id) }}" class="btn btn-primary">
+                    <i class="fas fa-vote-yea me-2"></i>Go to Voting
+                </a>
             </div>
         </div>
         {% endfor %}
+        
+        {% if upcoming_elections %}
+        <h3 class="mt-4 mb-3">Upcoming Elections</h3>
+        {% for election_year in upcoming_elections %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">{{ election_year.title }}</h3>
+                <p class="card-text">{{ election_year.description }}</p>
+                <p class="text-muted">
+                    Starts in: 
+                    {% if election_year.time_remaining %}
+                        {{ election_year.time_remaining.days }} days, 
+                        {{ election_year.time_remaining.hours }} hours, 
+                        {{ election_year.time_remaining.minutes }} minutes
+                    {% else %}
+                        Starting now
+                    {% endif %}
+                </p>
+                <p class="text-muted">
+                    Voting Period: {{ election_year.formatted_start }} to {{ election_year.formatted_end }}
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
     {% else %}
         <div class="card">
             <div class="card-body text-center py-5">

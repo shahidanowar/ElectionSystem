@@ -37,15 +37,26 @@ def format_datetime(dt):
         dt = dt.astimezone(pytz_timezone('Asia/Kolkata'))
     return dt.strftime('%d %B, %Y %I:%M %p')
 
-# Function to format datetime in IST
-def format_datetime(dt):
-    """Format datetime in IST with consistent format: dd Month, yyyy hh:mm AM/PM"""
+def calculate_time_remaining(start_date):
+    """Calculate time remaining until election starts and return in days, hours, minutes"""
     ist_timezone = pytz_timezone('Asia/Kolkata')
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=ist_timezone)
-    else:
-        dt = dt.astimezone(ist_timezone)
-    return dt.strftime('%d %B, %Y %I:%M %p')
+    now = get_ist_time()
+    start_date = start_date.astimezone(ist_timezone)
+    
+    if now >= start_date:
+        return None
+    
+    remaining = start_date - now
+    
+    days = remaining.days
+    hours, remainder = divmod(remaining.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    
+    return {
+        'days': days,
+        'hours': hours,
+        'minutes': minutes
+    }
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -182,11 +193,28 @@ def index():
         if ey.start_date.astimezone(ist_timezone) <= ist_time <= ey.end_date.astimezone(ist_timezone)
     ]
     
+    # Get upcoming elections
+    upcoming_elections = [
+        ey for ey in election_years 
+        if ey.start_date.astimezone(ist_timezone) > ist_time
+    ]
+    
     # Format times for display
     for ey in active_election_years:
         ey.formatted_start = format_datetime(ey.start_date)
         ey.formatted_end = format_datetime(ey.end_date)
-    return render_template('index.html', election_years=active_election_years, now=ist_time, ist_timezone=ist_timezone)
+    
+    # Calculate time remaining for upcoming elections
+    for ey in upcoming_elections:
+        ey.formatted_start = format_datetime(ey.start_date)
+        ey.formatted_end = format_datetime(ey.end_date)
+        ey.time_remaining = calculate_time_remaining(ey.start_date)
+    
+    return render_template('index.html', 
+                         election_years=active_election_years, 
+                         upcoming_elections=upcoming_elections,
+                         now=ist_time, 
+                         ist_timezone=ist_timezone)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
