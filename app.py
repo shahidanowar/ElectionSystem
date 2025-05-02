@@ -294,7 +294,8 @@ def admin_dashboard():
                          verified_users=verified_users,
                          active_elections=active_elections,
                          upcoming_elections=upcoming_elections,
-                         now_utc=now_utc)
+                         now_utc=now_utc,
+                         utc_timezone=timezone.utc)
 
 @app.route('/admin/election/post/new', methods=['GET', 'POST'])
 @login_required

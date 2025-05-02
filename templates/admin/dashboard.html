@@ -79,8 +79,8 @@
             </h3>
             <div>
                 {% if election_year.is_active %}
-                    {% set start_date = election_year.start_date.astimezone(timezone.utc) %}
-                    {% set end_date = election_year.end_date.astimezone(timezone.utc) %}
+                    {% set start_date = election_year.start_date.astimezone(utc_timezone) %}
+                    {% set end_date = election_year.end_date.astimezone(utc_timezone) %}
                     {% if now_utc < start_date %}
                         <span class="badge bg-warning">Upcoming</span>
                     {% elif now_utc > end_date %}
