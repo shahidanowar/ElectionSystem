@@ -289,7 +289,7 @@ def admin_dashboard():
                           ey.start_date.astimezone(ist_timezone) <= now_ist <= ey.end_date.astimezone(ist_timezone))
     upcoming_elections = sum(1 for ey in election_years 
                            if ey.is_active and 
-                           now < ey.start_date)
+                           now_ist < ey.start_date.astimezone(ist_timezone))
     
     return render_template('admin/dashboard.html',
                          election_years=election_years,
