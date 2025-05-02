@@ -19,17 +19,11 @@
                 </h3>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <div class="text-muted mb-2">
-                        <i class="fas fa-clock me-1"></i>Election Period:
-                        {{ election_year.start_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }} to 
-                        {{ election_year.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}
-                    </div>
-                    {% if election_year.description %}
-                    <p>{{ election_year.description }}</p>
-                    {% endif %}
-                </div>
-
+                <h3 class="card-title">{{ election_year.title }}</h3>
+                <p class="card-text">{{ election_year.description }}</p>
+                <p class="text-muted">
+                    Voting Period: {{ election_year.formatted_start }} to {{ election_year.formatted_end }}
+                </p>
                 {% if election_year.elections.count() > 0 %}
                 <div class="row">
                     {% for election in election_year.elections %}

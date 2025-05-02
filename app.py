@@ -8,6 +8,48 @@ from functools import wraps
 import os
 from werkzeug.utils import secure_filename
 from blockchain_config import get_contract, w3
+import ntplib
+import socket
+
+# Function to get accurate IST time from NTP server
+def get_ist_time():
+    """Get accurate IST time from NTP server"""
+    try:
+        # Use Google's NTP server
+        ntp_server = 'asia.pool.ntp.org'
+        client = ntplib.NTPClient()
+        response = client.request(ntp_server, version=3)
+        
+        # Convert NTP timestamp to datetime
+        ntp_time = datetime.fromtimestamp(response.tx_time)
+        
+        # Convert to IST
+        ist_timezone = pytz_timezone('Asia/Kolkata')
+        ist_time = ntp_time.astimezone(ist_timezone)
+        
+        return ist_time
+    except (ntplib.NTPException, socket.gaierror, socket.timeout):
+        # Fallback to system time if NTP fails
+        return datetime.now(pytz_timezone('Asia/Kolkata'))
+
+# Function to format datetime in IST
+def format_datetime(dt):
+    """Format datetime in IST with consistent format: dd Month, yyyy hh:mm AM/PM"""
+    if dt.tzinfo is None:
+        dt = get_ist_time()
+    else:
+        dt = dt.astimezone(pytz_timezone('Asia/Kolkata'))
+    return dt.strftime('%d %B, %Y %I:%M %p')
+
+# Function to format datetime in IST
+def format_datetime(dt):
+    """Format datetime in IST with consistent format: dd Month, yyyy hh:mm AM/PM"""
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ist_timezone)
+    else:
+        dt = dt.astimezone(ist_timezone)
+    return dt.strftime('%d %B, %Y %I:%M %p')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -133,16 +175,20 @@ def load_user(user_id):
 # Basic routes
 @app.route('/')
 def index():
-    ist_timezone = pytz_timezone('Asia/Kolkata')
-    now = datetime.now(ist_timezone)
+    ist_time = get_ist_time()
     # Get all active election years first
     election_years = ElectionYear.query.filter(ElectionYear.is_active == True).all()
     
     # Filter active elections using Python datetime comparison
     active_election_years = [
         ey for ey in election_years 
-        if ey.start_date.astimezone(ist_timezone) <= now <= ey.end_date.astimezone(ist_timezone)
+        if ey.start_date <= ist_time <= ey.end_date
     ]
+    
+    # Format times for display
+    for ey in active_election_years:
+        ey.formatted_start = format_datetime(ey.start_date)
+        ey.formatted_end = format_datetime(ey.end_date)
     return render_template('index.html', election_years=active_election_years, now=now)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -517,14 +563,28 @@ def cast_vote(election_id):
         return jsonify({'status': 'error', 'message': 'Please select a candidate.'})
     
     # Check if election is active
-    ist_timezone = pytz_timezone('Asia/Kolkata')
-    now = datetime.now(ist_timezone)
-    start_date = election.election_year.start_date.astimezone(ist_timezone)
-    end_date = election.election_year.end_date.astimezone(ist_timezone)
+    ist_time = get_ist_time()
+    formatted_now = format_datetime(ist_time)
+    formatted_start = format_datetime(election.election_year.start_date)
+    formatted_end = format_datetime(election.election_year.end_date)
     
     if not (election.election_year.is_active and 
-            start_date <= now <= end_date):
-        return jsonify({'status': 'error', 'message': 'This election is not currently active.'})
+            election.election_year.start_date <= now <= election.election_year.end_date):
+        if now < election.election_year.start_date:
+            return jsonify({
+                'status': 'error',
+                'message': f'Election has not started yet. Voting opens at {formatted_start}'
+            })
+        elif now > election.election_year.end_date:
+            return jsonify({
+                'status': 'error',
+                'message': f'Election has ended. Voting closed at {formatted_end}'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Election is not currently active'
+            })
 
     # Check if already voted
     has_voted = Vote.query.filter_by(
@@ -668,13 +728,15 @@ def election_results():
             start_date = election_year.start_date.astimezone(ist_timezone)
             results[election_year.id] = {
                 'title': election_year.title,
-                'end_date': end_date,
+                'start_date': format_datetime(start_date),
+                'end_date': format_datetime(end_date),
                 'status': 'ongoing' if current_time >= start_date else 'upcoming'
             }
     
     return render_template('election/results.html', 
                          results=results,
-                         current_time=current_time)
+                         current_time=format_datetime(current_time))
 
+# ... (rest of the code remains the same)
 if __name__ == '__main__':
     app.run(debug=True)
