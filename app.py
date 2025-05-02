@@ -189,7 +189,7 @@ def index():
     for ey in active_election_years:
         ey.formatted_start = format_datetime(ey.start_date)
         ey.formatted_end = format_datetime(ey.end_date)
-    return render_template('index.html', election_years=active_election_years, now=now)
+    return render_template('index.html', election_years=active_election_years, now=ist_time)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
