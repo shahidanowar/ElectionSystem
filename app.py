@@ -29,6 +29,26 @@ def allowed_file(filename):
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+
+# Initialize database before first request
+def init_db():
+    with app.app_context():
+        db.create_all()
+        # Create initial admin user if needed
+        if not User.query.filter_by(is_admin=True).first():
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True,
+                is_verified=True,
+                eth_address='0x0000000000000000000000000000000000000000'
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+# Run database initialization
+init_db()
 login_manager.login_view = 'login'
 
 # Admin required decorator
@@ -615,18 +635,4 @@ def election_results():
                          current_time=current_time)
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        # Create initial admin user if needed
-        if not User.query.filter_by(is_admin=True).first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin123'),
-                is_admin=True,
-                is_verified=True,
-                eth_address='0x0000000000000000000000000000000000000000'
-            )
-            db.session.add(admin)
-            db.session.commit()
     app.run(debug=True)
