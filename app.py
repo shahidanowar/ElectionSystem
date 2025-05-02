@@ -133,7 +133,8 @@ def load_user(user_id):
 # Basic routes
 @app.route('/')
 def index():
-    now = datetime.now(timezone.utc)
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    now = datetime.now(ist_timezone)
     # Get active election years
     active_election_years = ElectionYear.query.filter(
         ElectionYear.is_active == True,
@@ -267,7 +268,8 @@ def register_admin(token):
 @login_required
 @admin_required
 def admin_dashboard():
-    now = datetime.now(timezone.utc)
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    now = datetime.now(ist_timezone)
     
     # Get all election years and posts
     election_years = ElectionYear.query.all()
@@ -484,7 +486,8 @@ def verify_all_votes():
 def view_election(election_id):
     election = Election.query.get_or_404(election_id)
     election_year = election.election_year
-    now = datetime.now(timezone.utc)
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    now = datetime.now(ist_timezone)
     
     # Check if user has already voted
     has_voted = Vote.query.filter_by(
@@ -511,7 +514,8 @@ def cast_vote(election_id):
         return jsonify({'status': 'error', 'message': 'Please select a candidate.'})
     
     # Check if election is active
-    now = datetime.now(timezone.utc)
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    now = datetime.now(ist_timezone)
     if not (election.election_year.is_active and 
             election.election_year.start_date <= now <= election.election_year.end_date):
         return jsonify({'status': 'error', 'message': 'This election is not currently active.'})
