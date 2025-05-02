@@ -79,9 +79,11 @@
             </h3>
             <div>
                 {% if election_year.is_active %}
-                    {% if now < election_year.start_date %}
+                    {% set start_date = election_year.start_date.astimezone(timezone.utc) %}
+                    {% set end_date = election_year.end_date.astimezone(timezone.utc) %}
+                    {% if now_utc < start_date %}
                         <span class="badge bg-warning">Upcoming</span>
-                    {% elif now > election_year.end_date %}
+                    {% elif now_utc > end_date %}
                         <span class="badge bg-secondary">Ended</span>
                     {% else %}
                         <span class="badge bg-success">Active</span>
