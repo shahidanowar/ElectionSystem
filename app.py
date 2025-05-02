@@ -276,9 +276,16 @@ def admin_dashboard():
     pending_verifications = User.query.filter_by(is_verified=False, is_admin=False).count()
     verified_users = User.query.filter_by(is_verified=True, is_admin=False).count()
     
+    # Ensure all datetimes are UTC
+    now_utc = datetime.now(timezone.utc)
+    
     # Count active and upcoming elections
-    active_elections = sum(1 for ey in election_years if ey.is_active and ey.start_date <= now <= ey.end_date)
-    upcoming_elections = sum(1 for ey in election_years if ey.is_active and now < ey.start_date)
+    active_elections = sum(1 for ey in election_years 
+                          if ey.is_active and 
+                          ey.start_date.astimezone(timezone.utc) <= now_utc <= ey.end_date.astimezone(timezone.utc))
+    upcoming_elections = sum(1 for ey in election_years 
+                           if ey.is_active and 
+                           now_utc < ey.start_date.astimezone(timezone.utc))
     
     return render_template('admin/dashboard.html',
                          election_years=election_years,
