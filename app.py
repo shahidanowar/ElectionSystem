@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
@@ -112,7 +112,7 @@ def load_user(user_id):
 # Basic routes
 @app.route('/')
 def index():
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     # Get active election years
     active_election_years = ElectionYear.query.filter(
         ElectionYear.is_active == True,
@@ -246,7 +246,7 @@ def register_admin(token):
 @login_required
 @admin_required
 def admin_dashboard():
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     
     # Get all election years and posts
     election_years = ElectionYear.query.all()
@@ -435,7 +435,7 @@ def verify_all_votes():
 def view_election(election_id):
     election = Election.query.get_or_404(election_id)
     election_year = election.election_year
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     
     # Check if user has already voted
     has_voted = Vote.query.filter_by(
@@ -462,7 +462,7 @@ def cast_vote(election_id):
         return jsonify({'status': 'error', 'message': 'Please select a candidate.'})
     
     # Check if election is active
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     if not (election.election_year.is_active and 
             election.election_year.start_date <= now <= election.election_year.end_date):
         return jsonify({'status': 'error', 'message': 'This election is not currently active.'})
