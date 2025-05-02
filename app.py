@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
+from pytz import timezone as pytz_timezone
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
@@ -276,16 +277,17 @@ def admin_dashboard():
     pending_verifications = User.query.filter_by(is_verified=False, is_admin=False).count()
     verified_users = User.query.filter_by(is_verified=True, is_admin=False).count()
     
-    # Ensure all datetimes are UTC
-    now_utc = datetime.now(timezone.utc)
+    # Ensure all datetimes are in IST
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    now_ist = datetime.now(ist_timezone)
     
     # Count active and upcoming elections
     active_elections = sum(1 for ey in election_years 
                           if ey.is_active and 
-                          ey.start_date.astimezone(timezone.utc) <= now_utc <= ey.end_date.astimezone(timezone.utc))
+                          ey.start_date.astimezone(ist_timezone) <= now_ist <= ey.end_date.astimezone(ist_timezone))
     upcoming_elections = sum(1 for ey in election_years 
                            if ey.is_active and 
-                           now_utc < ey.start_date.astimezone(timezone.utc))
+                           now < ey.start_date)
     
     return render_template('admin/dashboard.html',
                          election_years=election_years,
@@ -294,8 +296,7 @@ def admin_dashboard():
                          verified_users=verified_users,
                          active_elections=active_elections,
                          upcoming_elections=upcoming_elections,
-                         now_utc=now_utc,
-                         utc_timezone=timezone.utc)
+                         now_ist=now)
 
 @app.route('/admin/election/post/new', methods=['GET', 'POST'])
 @login_required
