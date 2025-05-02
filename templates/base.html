@@ -295,7 +295,7 @@
                 day: 'numeric'
             };
             const formattedDate = now.toLocaleString('en-IN', options);
-            document.getElementById('liveClock').textContent = `<i class="fas fa-clock me-1"></i>${formattedDate}`;
+            document.getElementById('liveClock').innerHTML = `<i class="fas fa-clock me-1"></i>${formattedDate}`;
         }
 
         // Update clock immediately and then every second
