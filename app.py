@@ -186,7 +186,7 @@ def index():
     for ey in active_election_years:
         ey.formatted_start = format_datetime(ey.start_date)
         ey.formatted_end = format_datetime(ey.end_date)
-    return render_template('index.html', election_years=active_election_years, now=ist_time)
+    return render_template('index.html', election_years=active_election_years, now=ist_time, ist_timezone=ist_timezone)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -545,7 +545,8 @@ def view_election(election_id):
                          election=election,
                          election_year=election_year,
                          has_voted=has_voted,
-                         now=now)
+                         now=now,
+                         ist_timezone=ist_timezone)
 
 @app.route('/election/<int:election_id>/vote', methods=['POST'])
 @login_required
