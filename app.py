@@ -29,26 +29,6 @@ def allowed_file(filename):
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
-
-# Initialize database before first request
-def init_db():
-    with app.app_context():
-        db.create_all()
-        # Create initial admin user if needed
-        if not User.query.filter_by(is_admin=True).first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin123'),
-                is_admin=True,
-                is_verified=True,
-                eth_address='0x0000000000000000000000000000000000000000'
-            )
-            db.session.add(admin)
-            db.session.commit()
-
-# Run database initialization
-init_db()
 login_manager.login_view = 'login'
 
 # Admin required decorator
@@ -124,6 +104,26 @@ class Vote(db.Model):
     election_id = db.Column(db.Integer, db.ForeignKey('election.id'), nullable=False)
     candidate_id = db.Column(db.Integer, db.ForeignKey('candidate.id'), nullable=False)
     transaction_hash = db.Column(db.String(66), nullable=False)
+
+# Initialize database before first request
+def init_db():
+    with app.app_context():
+        db.create_all()
+        # Create initial admin user if needed
+        if not User.query.filter_by(is_admin=True).first():
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True,
+                is_verified=True,
+                eth_address='0x0000000000000000000000000000000000000000'
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+# Run database initialization
+init_db()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -384,8 +384,28 @@ def add_candidate(election_id):
         return redirect(url_for('admin_dashboard'))
     return render_template('admin/add_candidate.html', election=election)
 
+# Initialize database before first request
+def init_db():
+    with app.app_context():
+        db.create_all()
+        # Create initial admin user if needed
+        if not User.query.filter_by(is_admin=True).first():
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True,
+                is_verified=True,
+                eth_address='0x0000000000000000000000000000000000000000'
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+# Run database initialization
+init_db()
+
 # Add admin verification routes
-@app.route('/admin/verify_users')
+@app.route('/admin/verify-users')
 @login_required
 @admin_required
 def verify_users():
