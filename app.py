@@ -20,16 +20,12 @@ def get_ist_time():
         client = ntplib.NTPClient()
         response = client.request(ntp_server, version=3)
         
-        # Convert NTP timestamp to datetime
-        ntp_time = datetime.fromtimestamp(response.tx_time)
+        # Convert NTP timestamp to datetime with timezone
+        ntp_time = datetime.fromtimestamp(response.tx_time, pytz_timezone('Asia/Kolkata'))
         
-        # Convert to IST
-        ist_timezone = pytz_timezone('Asia/Kolkata')
-        ist_time = ntp_time.astimezone(ist_timezone)
-        
-        return ist_time
+        return ntp_time
     except (ntplib.NTPException, socket.gaierror, socket.timeout):
-        # Fallback to system time if NTP fails
+        # Fallback to system time with timezone
         return datetime.now(pytz_timezone('Asia/Kolkata'))
 
 # Function to format datetime in IST
@@ -180,9 +176,10 @@ def index():
     election_years = ElectionYear.query.filter(ElectionYear.is_active == True).all()
     
     # Filter active elections using Python datetime comparison
+    ist_timezone = pytz_timezone('Asia/Kolkata')
     active_election_years = [
         ey for ey in election_years 
-        if ey.start_date <= ist_time <= ey.end_date
+        if ey.start_date.astimezone(ist_timezone) <= ist_time <= ey.end_date.astimezone(ist_timezone)
     ]
     
     # Format times for display
@@ -568,14 +565,18 @@ def cast_vote(election_id):
     formatted_start = format_datetime(election.election_year.start_date)
     formatted_end = format_datetime(election.election_year.end_date)
     
+    ist_timezone = pytz_timezone('Asia/Kolkata')
+    start_date = election.election_year.start_date.astimezone(ist_timezone)
+    end_date = election.election_year.end_date.astimezone(ist_timezone)
+    
     if not (election.election_year.is_active and 
-            election.election_year.start_date <= now <= election.election_year.end_date):
-        if now < election.election_year.start_date:
+            start_date <= ist_time <= end_date):
+        if ist_time < start_date:
             return jsonify({
                 'status': 'error',
                 'message': f'Election has not started yet. Voting opens at {formatted_start}'
             })
-        elif now > election.election_year.end_date:
+        elif ist_time > end_date:
             return jsonify({
                 'status': 'error',
                 'message': f'Election has ended. Voting closed at {formatted_end}'
