@@ -138,8 +138,8 @@ def index():
     # Get active election years
     active_election_years = ElectionYear.query.filter(
         ElectionYear.is_active == True,
-        ElectionYear.start_date <= now,
-        ElectionYear.end_date >= now
+        ElectionYear.start_date.astimezone(ist_timezone) <= now,
+        ElectionYear.end_date.astimezone(ist_timezone) >= now
     ).all()
     return render_template('index.html', election_years=active_election_years, now=now)
 
@@ -518,7 +518,7 @@ def cast_vote(election_id):
     ist_timezone = pytz_timezone('Asia/Kolkata')
     now = datetime.now(ist_timezone)
     if not (election.election_year.is_active and 
-            election.election_year.start_date <= now <= election.election_year.end_date):
+            election.election_year.start_date.astimezone(ist_timezone) <= now <= election.election_year.end_date.astimezone(ist_timezone)):
         return jsonify({'status': 'error', 'message': 'This election is not currently active.'})
 
     # Check if already voted

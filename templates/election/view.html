@@ -16,12 +16,12 @@
                 <i class="fas {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                 Election Status: 
                 {% if election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
-                    Active (until {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }})
+                    Active (until {{ election_year.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }})
                 {% else %}
                     {% if now < election_year.start_date %}
-                        Starts on {{ election_year.start_date.strftime('%Y-%m-%d %H:%M') }}
+                        Starts on {{ election_year.start_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}
                     {% elif now > election_year.end_date %}
-                        Ended on {{ election_year.end_date.strftime('%Y-%m-%d %H:%M') }}
+                        Ended on {{ election_year.end_date.astimezone(ist_timezone).strftime('%Y-%m-%d %H:%M') }}
                     {% else %}
                         Inactive
                     {% endif %}
