@@ -117,6 +117,21 @@ class ElectionYear(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     elections = db.relationship('Election', backref='election_year', lazy='dynamic')
 
+    def __init__(self, year, title, description, start_date, end_date):
+        self.year = year
+        self.title = title
+        self.description = description
+        
+        # Convert to IST timezone
+        ist_timezone = pytz_timezone('Asia/Kolkata')
+        if start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=ist_timezone)
+        if end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=ist_timezone)
+        
+        self.start_date = start_date
+        self.end_date = end_date
+
     def __repr__(self):
         return f'<ElectionYear {self.year}>'
 
@@ -190,14 +205,22 @@ def index():
     ist_timezone = pytz_timezone('Asia/Kolkata')
     active_election_years = [
         ey for ey in election_years 
-        if ey.start_date.astimezone(ist_timezone) <= ist_time <= ey.end_date.astimezone(ist_timezone)
+        if ey.start_date <= ist_time <= ey.end_date
     ]
     
-    # Get upcoming elections
-    upcoming_elections = [
-        ey for ey in election_years 
-        if ey.start_date.astimezone(ist_timezone) > ist_time
-    ]
+    # Get upcoming elections with proper formatting
+    upcoming_elections = []
+    for ey in election_years:
+        if ey.start_date.astimezone(ist_timezone) > ist_time:
+            upcoming_elections.append({
+                'id': ey.id,
+                'title': ey.title,
+                'description': ey.description,
+                'start_date': ey.start_date.isoformat(),
+                'end_date': ey.end_date.isoformat(),
+                'formatted_start': format_datetime(ey.start_date),
+                'formatted_end': format_datetime(ey.end_date)
+            })
     
     # Format times for display
     for ey in active_election_years:
@@ -423,12 +446,19 @@ def create_election_for_post(election_year_id):
 @admin_required
 def create_election():
     if request.method == 'POST':
+        # Parse start and end date as IST, then convert to UTC for storage
+        ist_offset = timedelta(hours=5, minutes=30)
+        start_date_ist = datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M')
+        end_date_ist = datetime.strptime(request.form.get('end_date'), '%Y-%m-%dT%H:%M')
+        # Convert IST to UTC by subtracting 5:30
+        start_date_utc = start_date_ist - ist_offset
+        end_date_utc = end_date_ist - ist_offset
         election_year = ElectionYear(
             year=int(request.form.get('year')),
             title=request.form.get('title'),
             description=request.form.get('description'),
-            start_date=datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M'),
-            end_date=datetime.strptime(request.form.get('end_date'), '%Y-%m-%dT%H:%M'),
+            start_date=start_date_utc,
+            end_date=end_date_utc,
             is_active=True
         )
         db.session.add(election_year)
@@ -591,21 +621,17 @@ def cast_vote(election_id):
     # Check if election is active
     ist_time = get_ist_time()
     formatted_now = format_datetime(ist_time)
-    formatted_start = format_datetime(election.election_year.start_date)
-    formatted_end = format_datetime(election.election_year.end_date)
-    
-    ist_timezone = pytz_timezone('Asia/Kolkata')
-    start_date = election.election_year.start_date.astimezone(ist_timezone)
-    end_date = election.election_year.end_date.astimezone(ist_timezone)
+    formatted_start = format_datetime(election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')))
+    formatted_end = format_datetime(election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata')))
     
     if not (election.election_year.is_active and 
-            start_date <= ist_time <= end_date):
-        if ist_time < start_date:
+            election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')) <= ist_time <= election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata'))):
+        if ist_time < election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')):
             return jsonify({
                 'status': 'error',
                 'message': f'Election has not started yet. Voting opens at {formatted_start}'
             })
-        elif ist_time > end_date:
+        elif ist_time > election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata')):
             return jsonify({
                 'status': 'error',
                 'message': f'Election has ended. Voting closed at {formatted_end}'
@@ -755,17 +781,26 @@ def election_results():
                     results[election_year.id]['elections'][-1]['total_votes'] += db_vote_count
                     results[election_year.id]['total_votes'] += db_vote_count
         else:
-            start_date = election_year.start_date.astimezone(ist_timezone)
             results[election_year.id] = {
                 'title': election_year.title,
-                'start_date': format_datetime(start_date),
-                'end_date': format_datetime(end_date),
-                'status': 'ongoing' if current_time >= start_date else 'upcoming'
+                'start_date': election_year.start_date.isoformat(),
+                'end_date': election_year.end_date.isoformat(),
+                'status': 'ongoing' if current_time >= election_year.start_date else 'upcoming'
             }
     
+    # Convert datetime objects to strings for JavaScript
+    for election_year_id, data in results.items():
+        data['start_date'] = data.get('start_date', '').isoformat()
+        data['end_date'] = data.get('end_date', '').isoformat()
+        
+        for election in data.get('elections', []):
+            for candidate in election.get('candidates', []):
+                candidate['votes'] = int(candidate['votes'])
+                candidate['chain_votes'] = int(candidate['chain_votes'])
+    
     return render_template('election/results.html', 
-                         results=results,
-                         current_time=format_datetime(current_time))
+                          results=results,
+                          current_time=current_time.isoformat())
 
 # ... (rest of the code remains the same)
 if __name__ == '__main__':

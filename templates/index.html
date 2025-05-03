@@ -19,9 +19,15 @@
                 <p class="text-muted">
                     Voting Period: {{ election_year.formatted_start }} to {{ election_year.formatted_end }}
                 </p>
-                <a href="{{ url_for('view_election', election_id=election_year.elections.first().id) }}" class="btn btn-primary">
-                    <i class="fas fa-vote-yea me-2"></i>Go to Voting
-                </a>
+                {% if election_year.elections.first() %}
+                    <a href="{{ url_for('view_election', election_id=election_year.elections.first().id) }}" class="btn btn-primary">
+                        <i class="fas fa-vote-yea me-2"></i>Go to Voting
+                    </a>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No posts have been added to this election yet.
+                    </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -33,19 +39,27 @@
             <div class="card-body">
                 <h3 class="card-title">{{ election_year.title }}</h3>
                 <p class="card-text">{{ election_year.description }}</p>
-                <p class="text-muted">
-                    Starts in: 
-                    {% if election_year.time_remaining %}
-                        {{ election_year.time_remaining.days }} days, 
-                        {{ election_year.time_remaining.hours }} hours, 
-                        {{ election_year.time_remaining.minutes }} minutes
-                    {% else %}
-                        Starting now
-                    {% endif %}
-                </p>
+                <div class="alert alert-info p-4">
+                    <i class="fas fa-clock me-2"></i>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            This election starts in:
+                        </div>
+                        <div id="countdown-{{ election_year.id }}" class="h5 mb-0"></div>
+                    </div>
+                </div>
                 <p class="text-muted">
                     Voting Period: {{ election_year.formatted_start }} to {{ election_year.formatted_end }}
                 </p>
+                {% if election_year.elections.first() %}
+                    <a href="{{ url_for('view_election', election_id=election_year.elections.first().id) }}" class="btn btn-primary">
+                        <i class="fas fa-vote-yea me-2"></i>Go to Voting
+                    </a>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No posts have been added to this election yet.
+                    </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -76,4 +90,44 @@
         </div>
     </div>
 {% endif %}
+    <script>
+        // Get current IST time from server
+        const now = new Date('{{ current_time }}');
+        const upcomingElections = {{ upcoming_elections|tojson }};
+
+        function updateCountdowns() {
+            document.querySelectorAll('[id^="countdown-"]').forEach(element => {
+                const electionId = element.id.split('-')[1];
+                const electionData = upcomingElections.find(e => e.id == electionId);
+                
+                if (!electionData) {
+                    console.error(`No data found for election ID: ${electionId}`);
+                    return;
+                }
+
+                const startDate = new Date(electionData.start_date);
+                const timeRemaining = startDate - now;
+                
+                if (timeRemaining > 0) {
+                    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                    
+                    element.innerHTML = `
+                        <span class="me-2">${days}d</span>
+                        <span class="me-2">${hours}h</span>
+                        <span class="me-2">${minutes}m</span>
+                        <span>${seconds}s</span>
+                    `;
+                } else {
+                    element.innerHTML = '<span class="text-success">0d 0h 0m 0s</span>';
+                }
+            });
+        }
+
+        // Update countdowns immediately and then every second
+        updateCountdowns();
+        setInterval(updateCountdowns, 1000);
+    </script>
 {% endblock %}
