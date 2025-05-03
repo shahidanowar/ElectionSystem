@@ -846,6 +846,70 @@ def election_results():
                           results=results,
                           current_time=current_time.isoformat())
 
-# ... (rest of the code remains the same)
+# Add admin verification routes
+@app.route('/admin/verify-users')
+@login_required
+@admin_required
+def verify_users():
+    pending_users = User.query.filter_by(is_verified=False, is_admin=False).all()
+    return render_template('admin/verify_users.html', users=pending_users)
+
+@app.route('/admin/verify_user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def verify_user(user_id):
+    user = User.query.get_or_404(user_id)
+    action = request.form.get('action')
+    
+    if action == 'approve':
+        user.is_verified = True
+        db.session.commit()
+        flash(f'User {user.username} has been verified.')
+    elif action == 'reject':
+        # Delete the ID card image
+        if user.id_card_image:
+            try:
+                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.id_card_image))
+            except:
+                pass
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'User {user.username} has been rejected and removed.')
+    
+    return redirect(url_for('verify_users'))
+
+@app.route('/admin/verify-votes')
+@login_required
+@admin_required
+def verify_all_votes():
+    try:
+        contract = get_contract()
+        elections = Election.query.all()
+        mismatches = []
+        
+        for election in elections:
+            for candidate in election.candidates:
+                db_votes = Vote.query.filter_by(candidate_id=candidate.id).count()
+                chain_votes = contract.functions.getVoteCount(election.id, candidate.id).call()
+                
+                if db_votes != chain_votes:
+                    mismatches.append({
+                        'election': election.post.title,
+                        'candidate': candidate.name,
+                        'db_votes': db_votes,
+                        'chain_votes': chain_votes
+                    })
+        
+        if mismatches:
+            flash('Vote count mismatches found. Please check the details below.', 'warning')
+            return render_template('admin/vote_verification.html', mismatches=mismatches)
+        else:
+            flash('All vote counts verified successfully!', 'success')
+            return redirect(url_for('admin_dashboard'))
+            
+    except Exception as e:
+        flash(f'Error verifying votes: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
+
 if __name__ == '__main__':
     app.run(debug=True)
