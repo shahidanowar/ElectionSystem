@@ -76,33 +76,37 @@
 async function detectMetaMask() {
     // Check for MetaMask in different environments
     if (typeof window.ethereum !== 'undefined') {
+        console.log("Standard ethereum provider detected");
         return window.ethereum;
     }
     
     // Check if we're in a mobile browser that supports ethereum
-    if (window.web3) {
+    if (typeof window.web3 !== 'undefined') {
+        console.log("Legacy web3 provider detected");
         return window.web3.currentProvider;
     }
     
     // Check if we're in a mobile app environment with ethereum
     if (typeof window.ReactNativeWebView !== 'undefined' && window.ReactNativeWebView.postMessage) {
-        // We might be in the MetaMask mobile app webview
+        console.log("React Native webview detected");
         return true;
     }
     
     // Check if we're on a mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
-        // On mobile but no MetaMask detected - might need to open MetaMask app
+        console.log("Mobile device detected without MetaMask");
         return 'mobile';
     }
     
+    console.log("No MetaMask detected");
     return false;
 }
 
 async function connectMetaMask() {
     try {
         const provider = await detectMetaMask();
+        console.log("Provider detected:", provider);
         
         if (!provider) {
             throw new Error('MetaMask not detected');
@@ -110,69 +114,118 @@ async function connectMetaMask() {
         
         if (provider === 'mobile') {
             // For mobile devices without MetaMask browser extension
+            const currentUrl = encodeURIComponent(window.location.href);
             const mmDeepLink = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
             
-            if (confirm('You need to open this page in the MetaMask mobile app. Would you like to open MetaMask now?')) {
-                window.location.href = mmDeepLink;
-                return null; // User will be redirected
-            } else {
-                throw new Error('MetaMask connection cancelled');
-            }
+            console.log("Attempting to open MetaMask mobile app with deep link:", mmDeepLink);
+            
+            // Try to open MetaMask app
+            window.location.href = mmDeepLink;
+            
+            // Set a timeout to check if the app was opened
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // If we're still here after 2 seconds, the app probably didn't open
+                    if (confirm('Please open this page in the MetaMask mobile app. Would you like to download MetaMask?')) {
+                        // Determine which app store to open
+                        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                            window.location.href = 'https://apps.apple.com/us/app/metamask-blockchain-wallet/id1438144202';
+                        } else {
+                            window.location.href = 'https://play.google.com/store/apps/details?id=io.metamask';
+                        }
+                    }
+                    resolve(null);
+                }, 2000);
+            });
         }
         
         // Standard MetaMask connection
-        await window.ethereum.request({ 
-            method: 'wallet_requestPermissions',
-            params: [{ eth_accounts: {} }]
-        });
+        console.log("Requesting MetaMask permissions");
+        try {
+            await window.ethereum.request({ 
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }]
+            });
+        } catch (permissionError) {
+            console.log("Permission request failed, trying direct account request:", permissionError);
+            // If permission request fails, try direct account request
+        }
+        
+        console.log("Requesting accounts");
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        console.log("Accounts received:", accounts);
         return accounts[0];
     } catch (error) {
+        console.error("MetaMask connection error:", error);
         throw new Error('Failed to connect to MetaMask: ' + error.message);
     }
 }
 
 document.getElementById('voteForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    console.log("Vote form submitted");
     
-    // Check if MetaMask is installed
-    const provider = await detectMetaMask();
-    if (!provider) {
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            // Mobile device without MetaMask
-            if (confirm('Please install the MetaMask mobile app to vote. Would you like to download it now?')) {
-                // Open app store based on device
-                if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    window.location.href = 'https://apps.apple.com/us/app/metamask-blockchain-wallet/id1438144202';
-                } else {
-                    window.location.href = 'https://play.google.com/store/apps/details?id=io.metamask';
-                }
-            }
-        } else {
-            // Desktop without MetaMask
-            if (confirm('Please install the MetaMask browser extension to vote. Would you like to download it now?')) {
-                window.open('https://metamask.io/download/', '_blank');
-            }
-        }
+    // Make sure a candidate is selected
+    const candidateRadio = document.querySelector('input[name="candidate_id"]:checked');
+    if (!candidateRadio) {
+        alert('Please select a candidate to vote for.');
         return;
     }
     
-    if (provider === 'mobile') {
-        // Already handled in connectMetaMask
-        return;
-    }
-
-    const candidateId = document.querySelector('input[name="candidate_id"]:checked').value;
+    const candidateId = candidateRadio.value;
     const statusDiv = document.getElementById('metamaskStatus');
     const messageSpan = document.getElementById('metamaskMessage');
     
+    // Show status immediately
+    statusDiv.classList.remove('d-none', 'alert-danger');
+    statusDiv.classList.add('alert-info');
+    messageSpan.textContent = 'Checking for MetaMask...';
+    
     try {
-        statusDiv.classList.remove('d-none', 'alert-danger');
-        statusDiv.classList.add('alert-info');
+        // Check if MetaMask is installed
+        const provider = await detectMetaMask();
+        console.log("Provider detection result:", provider);
+        
+        if (!provider) {
+            messageSpan.textContent = 'MetaMask not detected. Please install MetaMask to vote.';
+            statusDiv.classList.remove('alert-info');
+            statusDiv.classList.add('alert-danger');
+            
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                // Mobile device without MetaMask
+                if (confirm('Please install the MetaMask mobile app to vote. Would you like to download it now?')) {
+                    // Open app store based on device
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        window.location.href = 'https://apps.apple.com/us/app/metamask-blockchain-wallet/id1438144202';
+                    } else {
+                        window.location.href = 'https://play.google.com/store/apps/details?id=io.metamask';
+                    }
+                }
+            } else {
+                // Desktop without MetaMask
+                if (confirm('Please install the MetaMask browser extension to vote. Would you like to download it now?')) {
+                    window.open('https://metamask.io/download/', '_blank');
+                }
+            }
+            return;
+        }
+        
+        if (provider === 'mobile') {
+            messageSpan.textContent = 'Redirecting to MetaMask mobile app...';
+            // This will be handled by connectMetaMask
+            await connectMetaMask();
+            return;
+        }
+
+        // Continue with MetaMask connection and voting
         messageSpan.textContent = 'Connecting to MetaMask...';
         
         // Connect to MetaMask first
         const account = await connectMetaMask();
+        if (!account) {
+            // User cancelled or there was an issue
+            return;
+        }
         
         // Get transaction data from server
         messageSpan.textContent = 'Preparing transaction...';
@@ -196,6 +249,7 @@ document.getElementById('voteForm').addEventListener('submit', async function(e)
         
         // Send transaction via MetaMask
         messageSpan.textContent = 'Please confirm the transaction in MetaMask...';
+        console.log("Sending transaction:", data.transaction);
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [data.transaction],
@@ -225,15 +279,16 @@ document.getElementById('voteForm').addEventListener('submit', async function(e)
         }
         
     } catch (error) {
+        console.error("Voting error:", error);
         statusDiv.classList.remove('alert-info');
         statusDiv.classList.add('alert-danger');
         messageSpan.textContent = `Error: ${error.message}`;
-        console.error('Voting error:', error);
     }
 });
 
 // Check MetaMask connection on page load
 window.addEventListener('load', async () => {
+    console.log("Page loaded, checking for MetaMask");
     if (typeof window.ethereum !== 'undefined') {
         try {
             // Check if already connected
@@ -244,6 +299,8 @@ window.addEventListener('load', async () => {
         } catch (error) {
             console.error('Error checking MetaMask connection:', error);
         }
+    } else {
+        console.log("MetaMask not detected on page load");
     }
 });
 </script>
