@@ -117,20 +117,23 @@ class ElectionYear(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     elections = db.relationship('Election', backref='election_year', lazy='dynamic')
 
-    def __init__(self, year, title, description, start_date, end_date):
+    def __init__(self, year, title, description, start_date, end_date, is_active=True):
         self.year = year
         self.title = title
         self.description = description
+        self.is_active = is_active
         
-        # Convert to IST timezone
-        ist_timezone = pytz_timezone('Asia/Kolkata')
-        if start_date.tzinfo is None:
-            start_date = start_date.replace(tzinfo=ist_timezone)
-        if end_date.tzinfo is None:
-            end_date = end_date.replace(tzinfo=ist_timezone)
-        
-        self.start_date = start_date
-        self.end_date = end_date
+        # Store dates in UTC
+        # If dates are naive (no timezone), assume they are UTC
+        if start_date.tzinfo is not None:
+            self.start_date = start_date.astimezone(pytz_timezone('UTC')).replace(tzinfo=None)
+        else:
+            self.start_date = start_date
+            
+        if end_date.tzinfo is not None:
+            self.end_date = end_date.astimezone(pytz_timezone('UTC')).replace(tzinfo=None)
+        else:
+            self.end_date = end_date
 
     def __repr__(self):
         return f'<ElectionYear {self.year}>'
@@ -201,37 +204,68 @@ def index():
     # Get all active election years first
     election_years = ElectionYear.query.filter(ElectionYear.is_active == True).all()
     
-    # Filter active elections using Python datetime comparison
+    # Filter active elections using Python datetime comparison with proper timezone handling
     ist_timezone = pytz_timezone('Asia/Kolkata')
-    active_election_years = [
-        ey for ey in election_years 
-        if ey.start_date <= ist_time <= ey.end_date
-    ]
+    active_election_years = []
+    for ey in election_years:
+        # Convert stored UTC times to IST for comparison
+        start_date_ist = datetime.utcnow().replace(
+            year=ey.start_date.year, month=ey.start_date.month, day=ey.start_date.day,
+            hour=ey.start_date.hour, minute=ey.start_date.minute, second=ey.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=ey.end_date.year, month=ey.end_date.month, day=ey.end_date.day,
+            hour=ey.end_date.hour, minute=ey.end_date.minute, second=ey.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        if start_date_ist <= ist_time <= end_date_ist:
+            active_election_years.append(ey)
     
     # Get upcoming elections with proper formatting
     upcoming_elections = []
     for ey in election_years:
-        if ey.start_date.astimezone(ist_timezone) > ist_time:
+        # Convert stored UTC time to IST for comparison
+        start_date_ist = datetime.utcnow().replace(
+            year=ey.start_date.year, month=ey.start_date.month, day=ey.start_date.day,
+            hour=ey.start_date.hour, minute=ey.start_date.minute, second=ey.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=ey.end_date.year, month=ey.end_date.month, day=ey.end_date.day,
+            hour=ey.end_date.hour, minute=ey.end_date.minute, second=ey.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        if start_date_ist > ist_time:
             upcoming_elections.append({
                 'id': ey.id,
                 'title': ey.title,
                 'description': ey.description,
-                'start_date': ey.start_date.isoformat(),
-                'end_date': ey.end_date.isoformat(),
-                'formatted_start': format_datetime(ey.start_date),
-                'formatted_end': format_datetime(ey.end_date)
+                'start_date': start_date_ist,
+                'end_date': end_date_ist,
+                'formatted_start': format_datetime(start_date_ist),
+                'formatted_end': format_datetime(end_date_ist)
             })
     
     # Format times for display
     for ey in active_election_years:
-        ey.formatted_start = format_datetime(ey.start_date)
-        ey.formatted_end = format_datetime(ey.end_date)
+        # Convert stored UTC times to IST for display
+        start_date_ist = datetime.utcnow().replace(
+            year=ey.start_date.year, month=ey.start_date.month, day=ey.start_date.day,
+            hour=ey.start_date.hour, minute=ey.start_date.minute, second=ey.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=ey.end_date.year, month=ey.end_date.month, day=ey.end_date.day,
+            hour=ey.end_date.hour, minute=ey.end_date.minute, second=ey.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        ey.formatted_start = format_datetime(start_date_ist)
+        ey.formatted_end = format_datetime(end_date_ist)
     
     # Calculate time remaining for upcoming elections
     for ey in upcoming_elections:
-        ey.formatted_start = format_datetime(ey.start_date)
-        ey.formatted_end = format_datetime(ey.end_date)
-        ey.time_remaining = calculate_time_remaining(ey.start_date)
+        ey.time_remaining = calculate_time_remaining(ey['start_date'])
     
     return render_template('index.html', 
                          election_years=active_election_years, 
@@ -365,7 +399,7 @@ def register_admin(token):
 @admin_required
 def admin_dashboard():
     ist_timezone = pytz_timezone('Asia/Kolkata')
-    now = datetime.now(ist_timezone)
+    now = get_ist_time()
     
     # Get all election years and posts
     election_years = ElectionYear.query.all()
@@ -375,17 +409,52 @@ def admin_dashboard():
     pending_verifications = User.query.filter_by(is_verified=False, is_admin=False).count()
     verified_users = User.query.filter_by(is_verified=True, is_admin=False).count()
     
-    # Ensure all datetimes are in IST
-    ist_timezone = pytz_timezone('Asia/Kolkata')
-    now_ist = datetime.now(ist_timezone)
-    
     # Count active and upcoming elections
-    active_elections = sum(1 for ey in election_years 
-                          if ey.is_active and 
-                          ey.start_date.astimezone(ist_timezone) <= now_ist <= ey.end_date.astimezone(ist_timezone))
-    upcoming_elections = sum(1 for ey in election_years 
-                           if ey.is_active and 
-                           now_ist < ey.start_date.astimezone(ist_timezone))
+    active_elections = 0
+    upcoming_elections = 0
+    
+    for ey in election_years:
+        # Convert stored UTC times to IST for comparison
+        start_date_ist = datetime.utcnow().replace(
+            year=ey.start_date.year, 
+            month=ey.start_date.month, 
+            day=ey.start_date.day,
+            hour=ey.start_date.hour, 
+            minute=ey.start_date.minute, 
+            second=ey.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=ey.end_date.year, 
+            month=ey.end_date.month, 
+            day=ey.end_date.day,
+            hour=ey.end_date.hour, 
+            minute=ey.end_date.minute, 
+            second=ey.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        if ey.is_active and start_date_ist <= now <= end_date_ist:
+            active_elections += 1
+        elif ey.is_active and now < start_date_ist:
+            upcoming_elections += 1
+    
+    # Add formatted dates to election years for display
+    for ey in election_years:
+        # Convert stored UTC times to IST for display
+        start_date_ist = datetime.utcnow().replace(
+            year=ey.start_date.year, month=ey.start_date.month, day=ey.start_date.day,
+            hour=ey.start_date.hour, minute=ey.start_date.minute, second=ey.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=ey.end_date.year, month=ey.end_date.month, day=ey.end_date.day,
+            hour=ey.end_date.hour, minute=ey.end_date.minute, second=ey.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        ey.formatted_start = format_datetime(start_date_ist)
+        ey.formatted_end = format_datetime(end_date_ist)
+        ey.start_date_ist = start_date_ist
+        ey.end_date_ist = end_date_ist
     
     return render_template('admin/dashboard.html',
                          election_years=election_years,
@@ -394,7 +463,7 @@ def admin_dashboard():
                          verified_users=verified_users,
                          active_elections=active_elections,
                          upcoming_elections=upcoming_elections,
-                         now_ist=now_ist,
+                         now=now,
                          ist_timezone=ist_timezone)
 
 @app.route('/admin/election/post/new', methods=['GET', 'POST'])
@@ -499,99 +568,37 @@ def add_candidate(election_id):
         return redirect(url_for('admin_dashboard'))
     return render_template('admin/add_candidate.html', election=election)
 
-# Initialize database before first request
-def init_db():
-    with app.app_context():
-        db.create_all()
-        # Create initial admin user if needed
-        if not User.query.filter_by(is_admin=True).first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin123'),
-                is_admin=True,
-                is_verified=True,
-                eth_address='0x0000000000000000000000000000000000000000'
-            )
-            db.session.add(admin)
-            db.session.commit()
-
-# Run database initialization
-init_db()
-
-# Add admin verification routes
-@app.route('/admin/verify-users')
-@login_required
-@admin_required
-def verify_users():
-    pending_users = User.query.filter_by(is_verified=False, is_admin=False).all()
-    return render_template('admin/verify_users.html', users=pending_users)
-
-@app.route('/admin/verify_user/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-def verify_user(user_id):
-    user = User.query.get_or_404(user_id)
-    action = request.form.get('action')
-    
-    if action == 'approve':
-        user.is_verified = True
-        db.session.commit()
-        flash(f'User {user.username} has been verified.')
-    elif action == 'reject':
-        # Delete the ID card image
-        if user.id_card_image:
-            try:
-                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.id_card_image))
-            except:
-                pass
-        db.session.delete(user)
-        db.session.commit()
-        flash(f'User {user.username} has been rejected and removed.')
-    
-    return redirect(url_for('verify_users'))
-
-@app.route('/admin/verify-votes')
-@login_required
-@admin_required
-def verify_all_votes():
-    try:
-        contract = get_contract()
-        elections = Election.query.all()
-        mismatches = []
-        
-        for election in elections:
-            for candidate in election.candidates:
-                db_votes = Vote.query.filter_by(candidate_id=candidate.id).count()
-                chain_votes = contract.functions.getVoteCount(election.id, candidate.id).call()
-                
-                if db_votes != chain_votes:
-                    mismatches.append({
-                        'election': election.post.title,
-                        'candidate': candidate.name,
-                        'db_votes': db_votes,
-                        'chain_votes': chain_votes
-                    })
-        
-        if mismatches:
-            flash('Vote count mismatches found. Please check the details below.', 'warning')
-            return render_template('admin/vote_verification.html', mismatches=mismatches)
-        else:
-            flash('All vote counts verified successfully!', 'success')
-            return redirect(url_for('admin_dashboard'))
-            
-    except Exception as e:
-        flash(f'Error verifying votes: {str(e)}', 'error')
-        return redirect(url_for('admin_dashboard'))
-
-# Voting Routes
+# Election Routes
 @app.route('/election/<int:election_id>')
 @login_required
 def view_election(election_id):
     election = Election.query.get_or_404(election_id)
     election_year = election.election_year
     ist_timezone = pytz_timezone('Asia/Kolkata')
-    now = datetime.now(ist_timezone)
+    now = get_ist_time()
+    
+    # Convert stored UTC times to IST for comparison and display
+    start_date_ist = datetime.utcnow().replace(
+        year=election_year.start_date.year, 
+        month=election_year.start_date.month, 
+        day=election_year.start_date.day,
+        hour=election_year.start_date.hour, 
+        minute=election_year.start_date.minute, 
+        second=election_year.start_date.second
+    ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+    
+    end_date_ist = datetime.utcnow().replace(
+        year=election_year.end_date.year, 
+        month=election_year.end_date.month, 
+        day=election_year.end_date.day,
+        hour=election_year.end_date.hour, 
+        minute=election_year.end_date.minute, 
+        second=election_year.end_date.second
+    ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+    
+    # Add IST formatted dates to election_year for template
+    election_year.start_date_ist = start_date_ist
+    election_year.end_date_ist = end_date_ist
     
     # Check if user has already voted
     has_voted = Vote.query.filter_by(
@@ -620,18 +627,37 @@ def cast_vote(election_id):
     
     # Check if election is active
     ist_time = get_ist_time()
-    formatted_now = format_datetime(ist_time)
-    formatted_start = format_datetime(election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')))
-    formatted_end = format_datetime(election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata')))
+    ist_timezone = pytz_timezone('Asia/Kolkata')
     
-    if not (election.election_year.is_active and 
-            election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')) <= ist_time <= election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata'))):
-        if ist_time < election.election_year.start_date.astimezone(pytz_timezone('Asia/Kolkata')):
+    # Convert stored UTC times to IST for comparison
+    start_date_ist = datetime.utcnow().replace(
+        year=election.election_year.start_date.year, 
+        month=election.election_year.start_date.month, 
+        day=election.election_year.start_date.day,
+        hour=election.election_year.start_date.hour, 
+        minute=election.election_year.start_date.minute, 
+        second=election.election_year.start_date.second
+    ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+    
+    end_date_ist = datetime.utcnow().replace(
+        year=election.election_year.end_date.year, 
+        month=election.election_year.end_date.month, 
+        day=election.election_year.end_date.day,
+        hour=election.election_year.end_date.hour, 
+        minute=election.election_year.end_date.minute, 
+        second=election.election_year.end_date.second
+    ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+    
+    formatted_start = format_datetime(start_date_ist)
+    formatted_end = format_datetime(end_date_ist)
+    
+    if not (election.election_year.is_active and start_date_ist <= ist_time <= end_date_ist):
+        if ist_time < start_date_ist:
             return jsonify({
                 'status': 'error',
                 'message': f'Election has not started yet. Voting opens at {formatted_start}'
             })
-        elif ist_time > election.election_year.end_date.astimezone(pytz_timezone('Asia/Kolkata')):
+        elif ist_time > end_date_ist:
             return jsonify({
                 'status': 'error',
                 'message': f'Election has ended. Voting closed at {formatted_end}'
@@ -737,7 +763,7 @@ def confirm_vote(election_id):
 @login_required
 def election_results():
     ist_timezone = pytz_timezone('Asia/Kolkata')
-    current_time = datetime.now(ist_timezone)
+    current_time = get_ist_time()
     election_years = ElectionYear.query.all()
     results = {}
     
@@ -745,12 +771,30 @@ def election_results():
     contract = get_contract()
     
     for election_year in election_years:
+        # Convert stored UTC times to IST for comparison
+        start_date_ist = datetime.utcnow().replace(
+            year=election_year.start_date.year, 
+            month=election_year.start_date.month, 
+            day=election_year.start_date.day,
+            hour=election_year.start_date.hour, 
+            minute=election_year.start_date.minute, 
+            second=election_year.start_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
+        end_date_ist = datetime.utcnow().replace(
+            year=election_year.end_date.year, 
+            month=election_year.end_date.month, 
+            day=election_year.end_date.day,
+            hour=election_year.end_date.hour, 
+            minute=election_year.end_date.minute, 
+            second=election_year.end_date.second
+        ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
+        
         # Only show results if election has ended
-        end_date = election_year.end_date.astimezone(ist_timezone)
-        if current_time > end_date:
+        if current_time > end_date_ist:
             results[election_year.id] = {
                 'title': election_year.title,
-                'end_date': end_date.astimezone(ist_timezone),
+                'end_date': end_date_ist,
                 'elections': [],
                 'total_votes': 0,
                 'status': 'ended'
@@ -783,15 +827,15 @@ def election_results():
         else:
             results[election_year.id] = {
                 'title': election_year.title,
-                'start_date': election_year.start_date.isoformat(),
-                'end_date': election_year.end_date.isoformat(),
-                'status': 'ongoing' if current_time >= election_year.start_date else 'upcoming'
+                'start_date': start_date_ist.isoformat(),
+                'end_date': end_date_ist.isoformat(),
+                'status': 'ongoing' if current_time >= start_date_ist else 'upcoming'
             }
     
     # Convert datetime objects to strings for JavaScript
     for election_year_id, data in results.items():
-        data['start_date'] = data.get('start_date', '').isoformat()
-        data['end_date'] = data.get('end_date', '').isoformat()
+        data['start_date'] = data.get('start_date', '')
+        data['end_date'] = data.get('end_date', '').isoformat() if hasattr(data.get('end_date', ''), 'isoformat') else data.get('end_date', '')
         
         for election in data.get('elections', []):
             for candidate in election.get('candidates', []):

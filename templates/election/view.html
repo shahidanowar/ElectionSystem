@@ -12,16 +12,16 @@
             <p class="lead">{{ election.description }}</p>
             {% endif %}
             
-            <div class="alert {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}alert-success{% else %}alert-warning{% endif %} mb-4">
-                <i class="fas {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            <div class="alert {% if election_year.is_active and now >= election_year.start_date_ist and now <= election_year.end_date_ist %}alert-success{% else %}alert-warning{% endif %} mb-4">
+                <i class="fas {% if election_year.is_active and now >= election_year.start_date_ist and now <= election_year.end_date_ist %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                 Election Status: 
-                {% if election_year.is_active and now >= election_year.start_date.astimezone(ist_timezone) and now <= election_year.end_date.astimezone(ist_timezone) %}
-                     Active (until {{ election_year.end_date.astimezone(ist_timezone).strftime('%d %B, %Y %I:%M %p') }})
+                {% if election_year.is_active and now >= election_year.start_date_ist and now <= election_year.end_date_ist %}
+                     Active (until {{ election_year.end_date_ist.strftime('%d %B, %Y %I:%M %p') }})
                 {% else %}
-                    {% if now < election_year.start_date.astimezone(ist_timezone) %}
-                        Starts on {{ election_year.start_date.astimezone(ist_timezone).strftime('%d %B, %Y %I:%M %p') }}
-                    {% elif now > election_year.end_date.astimezone(ist_timezone) %}
-                        Ended on {{ election_year.end_date.astimezone(ist_timezone).strftime('%d %B, %Y %I:%M %p') }}
+                    {% if now < election_year.start_date_ist %}
+                        Starts on {{ election_year.start_date_ist.strftime('%d %B, %Y %I:%M %p') }}
+                    {% elif now > election_year.end_date_ist %}
+                        Ended on {{ election_year.end_date_ist.strftime('%d %B, %Y %I:%M %p') }}
                     {% else %}
                         Inactive
                     {% endif %}
@@ -32,7 +32,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-vote-yea me-2"></i>You have already cast your vote for this position.
                 </div>
-            {% elif election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+            {% elif election_year.is_active and now >= election_year.start_date_ist and now <= election_year.end_date_ist %}
                 <form id="voteForm" class="mb-4">
                     <h4 class="mb-3">Cast Your Vote</h4>
                     {% for candidate in election.candidates %}
@@ -71,7 +71,7 @@
     </div>
 </div>
 
-{% if not has_voted and election_year.is_active and now >= election_year.start_date and now <= election_year.end_date %}
+{% if not has_voted and election_year.is_active and now >= election_year.start_date_ist and now <= election_year.end_date_ist %}
 <script>
 async function connectMetaMask() {
     try {
