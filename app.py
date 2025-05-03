@@ -264,8 +264,9 @@ def index():
         ey.formatted_end = format_datetime(end_date_ist)
     
     # Calculate time remaining for upcoming elections
-    for ey in upcoming_elections:
-        ey.time_remaining = calculate_time_remaining(ey['start_date'])
+    for i, ey in enumerate(upcoming_elections):
+        time_remaining = calculate_time_remaining(ey['start_date'])
+        upcoming_elections[i]['time_remaining'] = time_remaining
     
     return render_template('index.html', 
                          election_years=active_election_years, 
@@ -790,11 +791,15 @@ def election_results():
             second=election_year.end_date.second
         ).replace(tzinfo=pytz_timezone('UTC')).astimezone(ist_timezone)
         
+        # Format dates for display
+        formatted_start_date = start_date_ist.strftime('%Y-%m-%d %H:%M')
+        formatted_end_date = end_date_ist.strftime('%Y-%m-%d %H:%M')
+        
         # Only show results if election has ended
         if current_time > end_date_ist:
             results[election_year.id] = {
                 'title': election_year.title,
-                'end_date': end_date_ist,
+                'end_date': formatted_end_date,
                 'elections': [],
                 'total_votes': 0,
                 'status': 'ended'
@@ -827,15 +832,17 @@ def election_results():
         else:
             results[election_year.id] = {
                 'title': election_year.title,
-                'start_date': start_date_ist.isoformat(),
-                'end_date': end_date_ist.isoformat(),
+                'start_date': formatted_start_date,
+                'end_date': formatted_end_date,
                 'status': 'ongoing' if current_time >= start_date_ist else 'upcoming'
             }
     
     # Convert datetime objects to strings for JavaScript
     for election_year_id, data in results.items():
-        data['start_date'] = data.get('start_date', '')
-        data['end_date'] = data.get('end_date', '').isoformat() if hasattr(data.get('end_date', ''), 'isoformat') else data.get('end_date', '')
+        if isinstance(data.get('start_date', ''), datetime):
+            data['start_date'] = data['start_date'].strftime('%Y-%m-%d %H:%M')
+        if isinstance(data.get('end_date', ''), datetime):
+            data['end_date'] = data['end_date'].strftime('%Y-%m-%d %H:%M')
         
         for election in data.get('elections', []):
             for candidate in election.get('candidates', []):
