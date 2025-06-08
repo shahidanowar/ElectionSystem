@@ -76,30 +76,30 @@ The application follows a three-tier architecture:
 
   
 ## Project Design
-
-1.  **Data Flow Diagram**
-    ![Data Flow Diagram](Project_Snapshots/Screenshot%202025-06-01%20195949.png)
-2.  **Class Diagram**
-    ![Class Diagram](Project_Snapshots/Screenshot%202025-06-01%20200015.png)
-3.  **State Transition Diagram**
-    ![State Transition Diagram](Project_Snapshots/Screenshot%202025-06-01%20200030.png)
-4.  **System Architecture**
-    ![System Architecture](Project_Snapshots/Screenshot%202025-06-02%20180122.png)
+<br>
+1.  **Data Flow Diagram**<br>
+    ![Data Flow Diagram](Project_Snapshots/Screenshot%202025-06-01%20195949.png)<br>
+2.  **Class Diagram**<br>
+    ![Class Diagram](Project_Snapshots/Screenshot%202025-06-01%20200015.png)<br>
+3.  **State Transition Diagram**<br>
+    ![State Transition Diagram](Project_Snapshots/Screenshot%202025-06-01%20200030.png)<br>
+4.  **System Architecture**<br>
+    ![System Architecture](Project_Snapshots/Screenshot%202025-06-02%20180122.png)<br>
     
-## Project Snapshots
+## Project Snapshots<br>
 
-1.  **Home Page**
-    ![Home Page](Project_Snapshots/Home.png)
-2.  **Login Page**
-    ![Login Page](Project_Snapshots/Login.png)
-3.  **Student Registration Page**
-    ![Student Registration Page](Project_Snapshots/Registration.png)
-4.  **Admin Dashboard**
-    ![Admin Dashboard](Project_Snapshots/Admin.png)
-5.  **Election Creation (Admin)**
-    ![Election Creation](Project_Snapshots/Create_Election.png)
-6.  **Voting Interface (Student)**
-    ![Voting](Project_Snapshots/Vote.png)
+1.  **Home Page**<br>
+    ![Home Page](Project_Snapshots/Home.png)<br>
+2.  **Login Page**<br>
+    ![Login Page](Project_Snapshots/Login.png)<br>
+3.  **Student Registration Page**<br>
+    ![Student Registration Page](Project_Snapshots/Registration.png)<br>
+4.  **Admin Dashboard**<br>
+    ![Admin Dashboard](Project_Snapshots/Admin.png)<br>
+5.  **Election Creation (Admin)**<br>
+    ![Election Creation](Project_Snapshots/Create_Election.png)<br>
+6.  **Voting Interface (Student)**<br>
+    ![Voting](Project_Snapshots/Vote.png)<br>
 
 ## Setup and Installation
 
