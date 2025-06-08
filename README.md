@@ -75,31 +75,31 @@ The application follows a three-tier architecture:
 - **Network**: Connected to the Sepolia testnet via Infura RPC URL - `https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28`
 
   
-## Project Design
-<br>
-1.  **Data Flow Diagram**<br>
-    ![Data Flow Diagram](Project_Snapshots/Screenshot%202025-06-01%20195949.png)<br>
-2.  **Class Diagram**<br>
-    ![Class Diagram](Project_Snapshots/Screenshot%202025-06-01%20200015.png)<br>
-3.  **State Transition Diagram**<br>
-    ![State Transition Diagram](Project_Snapshots/Screenshot%202025-06-01%20200030.png)<br>
-4.  **System Architecture**<br>
-    ![System Architecture](Project_Snapshots/Screenshot%202025-06-02%20180122.png)<br>
-    
-## Project Snapshots<br>
+## Project Design<br>  
 
-1.  **Home Page**<br>
-    ![Home Page](Project_Snapshots/Home.png)<br>
-2.  **Login Page**<br>
-    ![Login Page](Project_Snapshots/Login.png)<br>
-3.  **Student Registration Page**<br>
-    ![Student Registration Page](Project_Snapshots/Registration.png)<br>
-4.  **Admin Dashboard**<br>
-    ![Admin Dashboard](Project_Snapshots/Admin.png)<br>
-5.  **Election Creation (Admin)**<br>
-    ![Election Creation](Project_Snapshots/Create_Election.png)<br>
-6.  **Voting Interface (Student)**<br>
-    ![Voting](Project_Snapshots/Vote.png)<br>
+1.  **Data Flow Diagram**<br>  
+    ![Data Flow Diagram](Project_Snapshots/Screenshot%202025-06-01%20195949.png)<br>  
+2.  **Class Diagram**<br>  
+    ![Class Diagram](Project_Snapshots/Screenshot%202025-06-01%20200015.png)<br>  
+3.  **State Transition Diagram**<br>  
+    ![State Transition Diagram](Project_Snapshots/Screenshot%202025-06-01%20200030.png)<br>  
+4.  **System Architecture**<br>  
+    ![System Architecture](Project_Snapshots/Screenshot%202025-06-02%20180122.png)<br>  
+    
+## Project Snapshots<br>  
+  
+1.  **Home Page**<br>  
+    ![Home Page](Project_Snapshots/Home.png)<br>  
+2.  **Login Page**<br>  
+    ![Login Page](Project_Snapshots/Login.png)<br>  
+3.  **Student Registration Page**<br>  
+    ![Student Registration Page](Project_Snapshots/Registration.png)<br>  
+4.  **Admin Dashboard**<br>  
+    ![Admin Dashboard](Project_Snapshots/Admin.png)<br>  
+5.  **Election Creation (Admin)**<br>  
+    ![Election Creation](Project_Snapshots/Create_Election.png)<br>  
+6.  **Voting Interface (Student)**<br>  
+    ![Voting](Project_Snapshots/Vote.png)<br>  
 
 ## Setup and Installation
 
