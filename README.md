@@ -74,21 +74,32 @@ The application follows a three-tier architecture:
 - **Interaction**: The Flask backend communicates with the smart contract using the `Web3.py` library, configured in `blockchain_config.py`.
 - **Network**: Connected to the Sepolia testnet via Infura RPC URL - `https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28`
 
-## Project Snapshots
-*(Please add screenshots of your application here. You can link them directly from your repository if you store them in an `assets` or `screenshots` folder within your project.)*
+  
+## Project Design
 
-1.  **Login Page**
+1.  **Data Flow Diagram**
+    ![Data Flow Diagram](Project_Snapshots/Screenshot%202025-06-01%20195949.png)
+2.  **Class Diagram**
+    ![Class Diagram](Project_Snapshots/Screenshot%202025-06-01%20200015.png)
+3.  **State Transition Diagram**
+    ![State Transition Diagram](Project_Snapshots/Screenshot%202025-06-01%20200030.png)
+4.  **System Architecture**
+    ![System Architecture](Project_Snapshots/Screenshot%202025-06-02%20180122.png)
+    
+## Project Snapshots
+
+1.  **Home Page**
+    ![Home Page](Project_Snapshots/Home.png)
+2.  **Login Page**
     ![Login Page](Project_Snapshots/Login.png)
 3.  **Student Registration Page**
-    `![Registration Page](path/to/your/registration_snapshot.png)`
+    ![Student Registration Page](Project_Snapshots/Registration.png)
 4.  **Admin Dashboard**
-    `![Admin Dashboard](path/to/your/admin_dashboard_snapshot.png)`
+    ![Admin Dashboard](Project_Snapshots/Admin.png)
 5.  **Election Creation (Admin)**
-    `![Election Creation](path/to/your/election_creation_snapshot.png)`
+    ![Election Creation](Project_Snapshots/Create_Election.png)
 6.  **Voting Interface (Student)**
-    `![Voting Page](path/to/your/voting_snapshot.png)`
-7.  **Election Results Page**
-    `![Results Page](path/to/your/results_snapshot.png)`
+    ![Voting](Project_Snapshots/Vote.png)
 
 ## Setup and Installation
 
