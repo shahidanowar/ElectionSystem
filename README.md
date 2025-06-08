@@ -2,8 +2,7 @@
 
 A secure and transparent web application for managing college elections, leveraging blockchain technology for vote integrity. Built with Flask and Solidity, this system allows students to register, get verified, and cast their votes, while administrators manage the election process.
 
-<!-- Optional: Add a license badge if you have one -->
-<!-- e.g., ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) -->
+
 
 ## Table of Contents
 - [Overview](#overview)
@@ -73,7 +72,7 @@ The application follows a three-tier architecture:
     - **Address**: `0xCe808658AAa4539Db1bF539ac3e4B949e89cB56c` (as per `blockchain_config.py`)
     - **Functionality**: Includes `castVote(electionId, candidateId)`, `getVoteCount(electionId, candidateId)`, and `hasVoted(electionId, voterAddress)`.
 - **Interaction**: The Flask backend communicates with the smart contract using the `Web3.py` library, configured in `blockchain_config.py`.
-- **Network**: Connected to the Sepolia testnet via Infura RPC URL (e.g., `https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28`).
+- **Network**: Connected to the Sepolia testnet via Infura RPC URL - `https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28`
 
 ## Project Snapshots
 *(Please add screenshots of your application here. You can link them directly from your repository if you store them in an `assets` or `screenshots` folder within your project.)*
@@ -102,11 +101,9 @@ The application follows a three-tier architecture:
 
 1.  **Clone the repository**:
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git)
-    cd YOUR_REPOSITORY_NAME
+    git clone https://github.com/shahidanowar/ElectionSystem
+    cd ElectionSystem
     ```
-    *(Replace `YOUR_USERNAME` and `YOUR_REPOSITORY_NAME` with your actual GitHub username and repository name.)*
-
 2.  **Create and activate a virtual environment** (recommended):
     ```bash
     python -m venv venv
@@ -124,7 +121,7 @@ The application follows a three-tier architecture:
 4.  **Set up Environment Variables**:
     Create a `.env` file in the root directory of the project. Add the following variables, replacing placeholder values with your actual credentials/keys:
     ```env
-    SEPOLIA_RPC_URL="[https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"](https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID")
+    SEPOLIA_RPC_URL= https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28
     CONTRACT_ADDRESS="0xCe808658AAa4539Db1bF539ac3e4B949e89cB56c" # Or your deployed contract address
     # ADMIN_SECRET_TOKEN is currently hardcoded in app.py as 'sha602hid43ano'.
     # For better practice, you might want to move it here:
@@ -177,7 +174,8 @@ The application follows a three-tier architecture:
     -   View election results after the voting period ends.
 
 ## Directory Structure
-ElectionSystem-FINAL/
+```bash
+ElectionSystem/
 ├── run.py                 # (renamed from app.py, or app.py becomes a factory)
 ├── instance/              # Instance folder for config, db if not in root
 │   └── config.py
@@ -203,7 +201,7 @@ ElectionSystem-FINAL/
 ├── requirements.txt
 ├── .env
 └── ...
-
+```
 ## Security Features
 - **Password Hashing**: Uses `werkzeug.security` for securely hashing passwords.
 - **CSRF Protection**: Flask-WTF provides CSRF protection (ensure forms are built using Flask-WTF for this).
@@ -246,7 +244,7 @@ This project is licensed under the MIT License. (You can add a `LICENSE` file wi
 
 ## Contact
 Shahid Anowar
-- GitHub: [Your GitHub Profile URL (e.g., https://github.com/shahidanowar)]
-- Email: [Your Email Address]
+- GitHub: https://github.com/shahidanowar
+- Email: shahidanowar2002@gmail.com / exkrogroup@gmail.com
 
-Project Link: [https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME)
+Project Link: https://github.com/shahidanowar/ElectionSystem
