@@ -73,7 +73,7 @@ The application follows a three-tier architecture:
     - **Address**: `0xCe808658AAa4539Db1bF539ac3e4B949e89cB56c` (as per `blockchain_config.py`)
     - **Functionality**: Includes `castVote(electionId, candidateId)`, `getVoteCount(electionId, candidateId)`, and `hasVoted(electionId, voterAddress)`.
 - **Interaction**: The Flask backend communicates with the smart contract using the `Web3.py` library, configured in `blockchain_config.py`.
-- **Network**: Connected to the Sepolia testnet via Infura RPC URL (e.g., `https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID`).
+- **Network**: Connected to the Sepolia testnet via Infura RPC URL (e.g., `https://sepolia.infura.io/v3/ffc964d1bc7e4f849c622cd675b93a28`).
 
 ## Project Snapshots
 *(Please add screenshots of your application here. You can link them directly from your repository if you store them in an `assets` or `screenshots` folder within your project.)*
@@ -177,7 +177,32 @@ The application follows a three-tier architecture:
     -   View election results after the voting period ends.
 
 ## Directory Structure
-ElectionSystem-FINAL/ ├── app.py # Main Flask application file ├── blockchain_config.py # Web3.py and smart contract configuration ├── requirements.txt # Python package dependencies ├── reset_db.py # Script to reset the database ├── .env # Environment variables (you need to create this) ├── contracts/ │ ├── ElectionContract.sol # Solidity smart contract source │ └── ElectionContract.json # Compiled ABI of the smart contract ├── static/ │ ├── id_cards/ # Uploaded ID card images are stored here │ └── (other static assets like css, js if any) ├── templates/ │ ├── admin/ # HTML templates for admin section │ │ ├── add_candidate.html │ │ ├── create_election.html │ │ ├── create_election_for_post.html │ │ ├── create_election_post.html │ │ ├── dashboard.html │ │ ├── register.html (admin registration) │ │ ├── verify_users.html │ │ └── vote_verification.html │ ├── election/ # HTML templates for election viewing, voting, results │ │ ├── results.html │ │ └── view.html │ ├── base.html # Base HTML template │ ├── index.html # Landing page template │ ├── login.html # User login template │ └── register.html # Student registration template └── election.db # SQLite database file (created on run)
+ElectionSystem-FINAL/
+├── run.py                 # (renamed from app.py, or app.py becomes a factory)
+├── instance/              # Instance folder for config, db if not in root
+│   └── config.py
+├── app/                   # Main application package
+│   ├── __init__.py        # App factory (create_app function)
+│   ├── static/
+│   ├── templates/
+│   │   ├── auth/
+│   │   ├── admin/
+│   │   └── election/
+│   ├── auth/              # Authentication blueprint
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   ├── admin/             # Admin blueprint
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   ├── election/          # Election blueprint
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   ├── models.py          # Database models
+│   └── blockchain.py      # (current blockchain_config.py logic)
+├── contracts/
+├── requirements.txt
+├── .env
+└── ...
 
 ## Security Features
 - **Password Hashing**: Uses `werkzeug.security` for securely hashing passwords.
