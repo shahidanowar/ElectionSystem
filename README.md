@@ -78,7 +78,7 @@ The application follows a three-tier architecture:
 *(Please add screenshots of your application here. You can link them directly from your repository if you store them in an `assets` or `screenshots` folder within your project.)*
 
 1.  **Login Page**
-    `![Login Page](path/to/your/login_snapshot.png)`
+    `![Login Page](https://github.com/shahidanowar/ElectionSystem/blob/main/Project_Snapshots/Login.png)`
 2.  **Student Registration Page**
     `![Registration Page](path/to/your/registration_snapshot.png)`
 3.  **Admin Dashboard**
