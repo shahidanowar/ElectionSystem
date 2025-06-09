@@ -260,4 +260,5 @@ Shahid Anowar
 - Email: shahidanowar2002@gmail.com / exkrogroup@gmail.com
 
 **Project Link:** https://github.com/shahidanowar/ElectionSystem<br><hr>
-## Project Report Link: https://github.com/shahidanowar/ElectionSystem/blob/4f67c7dfc53af628c7d8a6da210b6d082aa70ad7/Project_Report.pdf
+## Project Report Link: <br>
+https://github.com/shahidanowar/ElectionSystem/blob/4f67c7dfc53af628c7d8a6da210b6d082aa70ad7/Project_Report.pdf
